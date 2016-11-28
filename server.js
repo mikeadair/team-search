@@ -24,12 +24,6 @@ function getSummonerID(s, callback){
         callback("Not Found");
     });
 }
-//-----------------------------------------------------------------------
-// Function: getSummonerID
-// Desc: Grabs summoner ID from a summoner name that is given
-// Pre: Summoner name must be given
-// Post: Return ID if found, else return "Not Found"
-//-----------------------------------------------------------------------
 
 function getScore(id, callback){
     LolApi.ChampionMastery.getScore(id)
@@ -47,36 +41,64 @@ function getMatchHistory(id, callback){
     });
 }
 
-//did player play with other player?
-//grab summoner id of summoner and teamMate
-//grab summoner's match history
-//see if teamMate's id is in summoner's match history
-//if so, true - else, false
-//function teamVerification(summoner, teamMate)...
+//checks last 10 games
+function teamVerification(sID, tID, callback){
+    getMatchHistory(sID, function(matches){
+        if(JSON.stringify(matches).indexOf(tID) > -1){
+            callback(true);
+        }else{
+            callback(false);
+        }
+    });
+}
 
 
-//LolApi.ChampionMastery.getTopChampions(playerId, count (5), callback); - Top 5
-//function getTopChamps()...
+//doesnt work
+function getTopChamps(id, callback){
+    LolApi.ChampionMastery.getTopChampions(id, "3", "na", function(data){
+       callback(data); 
+    });
+}
 
 
 //LolApi.getLeagueData(summonerId, callback);
 //function getLeagueData()...
 
-//verify mastery page token
-//ask to your summoner to rename a page name with a token provided by your app and match it after
-//function accountVerify()
-//LolApi.Summoner.getMasteries(summonerId, callback);
+
+
+function accountVerify(id, token, callback){
+    LolApi.Summoner.getMasteries(id, function(data){
+        if(JSON.stringify(data).indexOf(token) > -1){
+            callback(true);
+        }else{
+            callback(false);
+        }
+    });
+}
+
 
 
 app.get('/test', function (req, res){
     var user = req.query.summoner;
+    var teamMate = req.query.teamMate;
     console.log("User: "+user);
+    console.log("TeamMate: "+teamMate);
     getSummonerID(user, function(data){
       var id = data;
       if(id == "Not Found"){
           res.send("Player Not Found");
       }
       console.log("User-ID: "+id);
+      getTopChamps(id, function(data){
+         console.log("Top champs: "+data); 
+      });
+      getSummonerID(teamMate, function(data){
+          var tid = data;
+          console.log("tid: " +tid);
+          teamVerification(id, tid, function(data){
+             console.log("Did I play with this player? " + data); 
+          });
+      });
       getMatchHistory(id, function(data){
          res.send(data); 
       });
