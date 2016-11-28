@@ -1,0 +1,30 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "discord.js": "^10.0.1",
+    "express": "^3.2.6",
+    "async": "^2.1.4",
+    "leagueapi": "^0.4.21",
+    "node-opus": "^0.2.4",
+    "opusscript": "^0.0.1",
+    "socket.io": "^1.7.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikeadair/team-search.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mikeadair/team-search/issues"
+  },
+  "homepage": "https://github.com/mikeadair/team-search#readme"
+}
