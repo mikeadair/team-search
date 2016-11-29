@@ -2,6 +2,9 @@ var express = require('express')
 var app = express()
 var LolApi = require('leagueapi');
 
+var RwG = require('random-word-generator');
+var gen = new RwG();
+
 //Release public folder to the world
 app.use(express.static('public'))
 
@@ -81,20 +84,10 @@ function validateEmail(email) {
     return re.test(email);
 }
 
-function genString(char){
-    var str = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    for( var i=0; i < char; i++ )
-        str += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    return str;
-}
-
 app.get('/genString', function(req, res) {
     var email = req.query.email;
     var summoner = req.query.summoner;
-    var string = genString(6);
+    var string = gen.generate();
     
     //Make sure queries are sent
     if(!email || !summoner){
@@ -109,14 +102,13 @@ app.get('/genString', function(req, res) {
     }
     
     //Check req.query.email against DB to see if already in use.
-    var str = genString(6);
     getSummonerID(summoner, function(data){
         var uid = data;
         if(uid['error']){
             res.send(uid);
             return;
         }
-        res.send({"string": str, "email": email, "summoner": summoner,"id": uid});    
+        res.send({"string": string, "email": email, "summoner": summoner,"id": uid});    
     });
     //Maybe here we should return the email applied with, string, and account wanted to link.
     //Next step will just be a button that sends all of this info back to us then its checked
@@ -151,4 +143,4 @@ app.get('/test', function (req, res){
     });
 });
 
-app.listen(process.env.PORT); //C9 requires process.env.PORT
+app.listen(3000);
