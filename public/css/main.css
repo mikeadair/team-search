@@ -1,0 +1,35 @@
+body{
+  background: rgb(29,24,44);
+}
+
+h2{
+  font-family: 'Bungee', cursive;
+}
+
+div.well{
+  height: 250px;
+} 
+
+.Absolute-Center {
+  margin: auto;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: #FFFFFF;
+  border-radius: 8px;
+}
+
+.Absolute-Center.is-Responsive {
+  width: 50%; 
+  overflow:hidden;
+  height:40%;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.hvr-shutter-out-horizontal:before{
+  background: rgb(29,24,44);
+}
+
+.hvr-rectangle-out:before{
+  background: rgb(29,24,44);
+}
