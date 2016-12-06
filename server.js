@@ -175,8 +175,8 @@ app.post('/requestNewAccount', function(req, res) {
     var string = randWord();
 
     //Make sure queries are sent
-    if(!email || !summoner){
-        return res.send({"error": "Missing 'email' or 'summoner'."});
+    if(!email || !summoner || !password){
+        return res.send({"error": "Missing 'email', 'password', or 'summoner'."});
     }
 
     //Make sure email is valid
