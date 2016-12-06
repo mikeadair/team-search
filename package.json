@@ -4,10 +4,12 @@
   "description": "",
   "main": "server.js",
   "dependencies": {
+    "async": "^2.1.4",
     "discord.js": "^10.0.1",
     "express": "^3.2.6",
-    "async": "^2.1.4",
     "leagueapi": "^0.4.21",
+    "mongodb": "^2.2.12",
+    "mongoose": "^4.7.1",
     "node-opus": "^0.2.4",
     "opusscript": "^0.0.1",
     "socket.io": "^1.7.0"
