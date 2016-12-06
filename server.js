@@ -108,15 +108,11 @@ function getTopChamps(id, callback){
 
 function accountVerify(id, token, callback){
     LolApi.Summoner.getMasteries(id, function(data){
-        if(docs.length == 0){
-          callback(false);
-        }else{
-          if(JSON.stringify(data).indexOf(token) > -1){
-              callback(true);
-          }else{
-              callback(false);
-          }
-        }
+      if(JSON.stringify(data).indexOf(token) > -1){
+          callback(true);
+      }else{
+          callback({'error': 'Mastery with confirm token not found.'});
+      }
     });
 }
 
