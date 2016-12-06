@@ -1,12 +1,54 @@
 var express = require('express')
 var app = express()
 var LolApi = require('leagueapi');
+var mongoose = require('mongoose');
+
+//MongoDB Database Connection
+var mongo_user = 'root';
+var mongo_pass = 'root';
+mongoose.connect('mongodb://'+mongo_user+':'+mongo_pass+'@ds159747.mlab.com:59747/team-search');
+
+//Account Model
+var Account = mongoose.model('Account', {email: String, summoner: String, summonerId: Number, verified: Boolean, confirm: String});
+
+//Get Account by ID
+function getAccountById(id, callback){
+  Account.find({'_id': id}, function(err, docs){
+    if(docs.length == 0){
+      callback({'error': 'Account not found with ID.'});
+    }else{
+      callback(docs[0]);
+    }
+  });
+}
+
+//Checks if email is already being used
+function emailInUse(email, callback){
+  Account.find({'email': email, 'verified': true}, function(err, docs){
+    if(docs.length == 0){
+      callback(false);
+    }else{
+      callback({'error': "Email is already verified for another account."});
+    }
+  });
+}
+
+//Checks if summoner is already being used
+function summonerInUse(summoner, callback){
+  Account.find({'summoner': summoner, 'verified': true}, function(err, docs){
+    if(docs.length == 0){
+      callback(false);
+    }else{
+      callback({'error': "Summoner is already verified for another account."});
+    }
+  });
+}
 
 //Release public folder to the world
-app.use(express.static('public'))
+app.use(express.static('public'));
 
 //Developer Key - North America
-LolApi.init('afadd45a-7661-4905-9b78-d66ea2493f8a', 'na');
+LolApi.init('RGAPI-b204e665-1d3d-4ecb-bcf8-fb3d9b9ffd97', 'na');
 
 const reqSec = 10;
 const reqMin = 500;
@@ -29,7 +71,7 @@ function getScore(id, callback){
     LolApi.ChampionMastery.getScore(id)
     .then(function (summoner) {
        var score = summoner;
-       callback(score); 
+       callback(score);
     });
 }
 
@@ -56,7 +98,7 @@ function teamVerification(sID, tID, callback){
 //doesnt work
 function getTopChamps(id, callback){
     LolApi.ChampionMastery.getTopChampions(id, "3", "na", function(data){
-       callback(data); 
+       callback(data);
     });
 }
 
@@ -64,14 +106,16 @@ function getTopChamps(id, callback){
 //LolApi.getLeagueData(summonerId, callback);
 //function getLeagueData()...
 
-
-
 function accountVerify(id, token, callback){
     LolApi.Summoner.getMasteries(id, function(data){
-        if(JSON.stringify(data).indexOf(token) > -1){
-            callback(true);
+        if(docs.length == 0){
+          callback(false);
         }else{
-            callback(false);
+          if(JSON.stringify(data).indexOf(token) > -1){
+              callback(true);
+          }else{
+              callback(false);
+          }
         }
     });
 }
@@ -86,63 +130,82 @@ function validateEmail(email) {
     return re.test(email);
 }
 
-app.get('/genString', function(req, res) {
+app.get('/registerUser', function(req, res){
+    var confirm = req.query.confirm;
+    var id = req.query.id;
+
+    //Make sure queries are sent
+    if(!id || !confirm){
+        return res.send({"error": "Missing 'confirm' or 'id'."});
+    }
+
+    //Make sure Account with ID exists
+    getAccountById(id, function(data){
+      if(data['verified'] == true){
+        return res.send({'error': 'Account already verified with User.'})
+      }
+      if(data['error']){
+        return res.send(data);
+      }else{
+        //Make sure Confirm is the same in DB
+        if(data['confirm'] === confirm){
+          //Make sure Account has Mastery with Token
+          accountVerify(data['summonerId'], data['confirm'], function(data){
+            return res.send(data);
+            if(data['error']){
+              return res.send(data);
+            }else{
+              Account.update({_id: id}, {'verified': true}, function(err, docs){})
+              return res.send({'success': 'User successfully Registered.'});
+            }
+          })
+        }else{
+          return res.send({'error': 'Confirm token does not match user in DB.'})
+        }
+      }
+    })
+});
+
+app.get('/requestNewAccount', function(req, res) {
     var email = req.query.email;
     var summoner = req.query.summoner;
     var string = randWord();
-    
+
     //Make sure queries are sent
     if(!email || !summoner){
-        res.send({"error": "Missing 'email' or 'summoner'."});
-        return;
+        return res.send({"error": "Missing 'email' or 'summoner'."});
     }
-    
+
     //Make sure email is valid
     if(!validateEmail(email)){
-        res.send({"error": "Invalid 'email' address."});
-        return;
+        return res.send({"error": "Invalid 'email' address."});
     }
-    
-    //Check req.query.email against DB to see if already in use.
-    getSummonerID(summoner, function(data){
-        var uid = data;
-        if(uid['error']){
-            res.send(uid);
-            return;
-        }
-        res.send({"string": string, "email": email, "summoner": summoner,"id": uid});    
-    });
-    //Maybe here we should return the email applied with, string, and account wanted to link.
-    //Next step will just be a button that sends all of this info back to us then its checked
-    //against accountVerify and added to the DB if success.
-});
 
-app.get('/test', function (req, res){
-    var summoner = req.query.summoner;
-    var teamMate = req.query.teamMate;
-    console.log("User: "+summoner);
-    console.log("TeamMate: "+teamMate);
-    getSummonerID(summoner, function(data){
-      var id = data;
-      if(id['error']){
-          res.send(id);
-          return;
+    //Check to see if Email is already being Used
+    emailInUse(email, function(data){
+      if(data['error']){
+        return res.send(data);
+      }else{
+        //Check to see if Summoner is already being used
+        summonerInUse(summoner, function(data){
+          if(data['error']){
+            return res.send(data);
+          }else{
+            //Check to see if Summoner Exists
+            getSummonerID(summoner, function(data){
+                if(data['error']){
+                    return res.send(data);
+                }
+                //Add Account to DB
+                var acc = new Account({'email': email, 'summoner': summoner, 'summonerId': data, 'verified': false, 'confirm': string});
+                acc.save();
+                //Send Confirm String and Account ID
+                return res.send({'confirm': string, 'id': acc['_id']});
+            })
+          }
+        })
       }
-      console.log("User-ID: "+id);
-      getTopChamps(id, function(data){
-         console.log("Top champs: "+data); 
-      });
-      getSummonerID(teamMate, function(data){
-          var tid = data;
-          console.log("tid: " +tid);
-          teamVerification(id, tid, function(data){
-             console.log("Did I play with this player? " + data); 
-          });
-      });
-      getMatchHistory(id, function(data){
-         res.send(data); 
-      });
-    });
+    })
 });
 
 app.listen(3000);
