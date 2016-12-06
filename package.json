@@ -5,6 +5,8 @@
   "main": "server.js",
   "dependencies": {
     "async": "^2.1.4",
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.15.2",
     "discord.js": "^10.0.1",
     "express": "^3.2.6",
     "leagueapi": "^0.4.21",

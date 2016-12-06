@@ -2,6 +2,12 @@ var express = require('express')
 var app = express()
 var LolApi = require('leagueapi');
 var mongoose = require('mongoose');
+var bcrypt = require('bcrypt-nodejs');
+
+//Body Parser for POST
+var bodyParser = require('body-parser');
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 //MongoDB Database Connection
 var mongo_user = 'root';
@@ -9,7 +15,7 @@ var mongo_pass = 'root';
 mongoose.connect('mongodb://'+mongo_user+':'+mongo_pass+'@ds159747.mlab.com:59747/team-search');
 
 //Account Model
-var Account = mongoose.model('Account', {email: String, summoner: String, summonerId: Number, verified: Boolean, confirm: String});
+var Account = mongoose.model('Account', {email: String, password: String, summoner: String, summonerId: Number, verified: Boolean, confirm: String});
 
 //Get Account by ID
 function getAccountById(id, callback){
@@ -127,9 +133,9 @@ function validateEmail(email) {
     return re.test(email);
 }
 
-app.get('/registerUser', function(req, res){
-    var confirm = req.query.confirm;
-    var id = req.query.id;
+app.post('/registerUser', function(req, res){
+    var confirm = req.body.confirm;
+    var id = req.body.id;
 
     //Make sure queries are sent
     if(!id || !confirm){
@@ -162,9 +168,10 @@ app.get('/registerUser', function(req, res){
     })
 });
 
-app.get('/requestNewAccount', function(req, res) {
-    var email = req.query.email;
-    var summoner = req.query.summoner;
+app.post('/requestNewAccount', function(req, res) {
+    var email = req.body.email;
+    var summoner = req.body.summoner;
+    var password = bcrypt.hashSync(req.body.password);
     var string = randWord();
 
     //Make sure queries are sent
@@ -175,6 +182,11 @@ app.get('/requestNewAccount', function(req, res) {
     //Make sure email is valid
     if(!validateEmail(email)){
         return res.send({"error": "Invalid 'email' address."});
+    }
+
+    //Make sure password is 6+ Charecters
+    if(req.body.password.length < 6){
+        return res.send({"error": "Password must be greater than 5 charecters."});
     }
 
     //Check to see if Email is already being Used
@@ -193,7 +205,7 @@ app.get('/requestNewAccount', function(req, res) {
                     return res.send(data);
                 }
                 //Add Account to DB
-                var acc = new Account({'email': email, 'summoner': summoner, 'summonerId': data, 'verified': false, 'confirm': string});
+                var acc = new Account({'email': email, 'password': password, 'summoner': summoner, 'summonerId': data, 'verified': false, 'confirm': string});
                 acc.save();
                 //Send Confirm String and Account ID
                 return res.send({'confirm': string, 'id': acc['_id']});
@@ -204,8 +216,4 @@ app.get('/requestNewAccount', function(req, res) {
     })
 });
 
-<<<<<<< HEAD
-app.listen(process.env.PORT);
-=======
 app.listen(3000);
->>>>>>> 61da54b5e04c363bad959ab512fe47fd7cb1e634
