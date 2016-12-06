@@ -107,12 +107,13 @@ function getTopChamps(id, callback){
 //function getLeagueData()...
 
 function accountVerify(id, token, callback){
-    LolApi.Summoner.getMasteries(id, function(data){
-      if(JSON.stringify(data).indexOf(token) > -1){
-          callback(true);
-      }else{
-          callback({'error': 'Mastery with confirm token not found.'});
+    LolApi.Summoner.getMasteries(id, function(err, data){
+      for(var i = 0;i < data[id]['pages'].length;i++){
+        if(data[id]['pages'][i]['name'] == token){
+          return callback(true);
+        }
       }
+    return callback({'error': 'Mastery with confirm token not found.'});
     });
 }
 
@@ -147,7 +148,6 @@ app.get('/registerUser', function(req, res){
         if(data['confirm'] === confirm){
           //Make sure Account has Mastery with Token
           accountVerify(data['summonerId'], data['confirm'], function(data){
-            return res.send(data);
             if(data['error']){
               return res.send(data);
             }else{
