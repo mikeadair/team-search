@@ -204,4 +204,8 @@ app.get('/requestNewAccount', function(req, res) {
     })
 });
 
+<<<<<<< HEAD
+app.listen(process.env.PORT);
+=======
 app.listen(3000);
+>>>>>>> 61da54b5e04c363bad959ab512fe47fd7cb1e634
