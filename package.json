@@ -8,13 +8,14 @@
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.15.2",
     "discord.js": "^10.0.1",
-    "express": "^3.2.6",
     "leagueapi": "^0.4.21",
     "mongodb": "^2.2.12",
     "mongoose": "^4.7.1",
     "node-opus": "^0.2.4",
     "opusscript": "^0.0.1",
-    "socket.io": "^1.7.0"
+    "socket.io": "^1.7.0",
+    "express": "^4.12.4",
+		"font-awesome": "^4.6.3"
   },
   "devDependencies": {},
   "scripts": {

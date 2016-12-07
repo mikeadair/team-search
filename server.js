@@ -1,8 +1,20 @@
-var express = require('express')
-var app = express()
+var express = require('express');
+var app = express();
 var LolApi = require('leagueapi');
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
+
+//Release public folder to the world
+app.use(express.static('public'));
+var path = require('path');
+
+//Developer Key - North America
+LolApi.init('RGAPI-b204e665-1d3d-4ecb-bcf8-fb3d9b9ffd97', 'na');
+
+const reqSec = 10;
+const reqMin = 500;
+
+LolApi.setRateLimit(reqSec, reqMin);
 
 //Body Parser for POST
 var bodyParser = require('body-parser');
@@ -49,19 +61,6 @@ function summonerInUse(summoner, callback){
     }
   });
 }
-
-//Release public folder to the world
-app.use(express.static('public'));
-
-//Developer Key - North America
-LolApi.init('RGAPI-b204e665-1d3d-4ecb-bcf8-fb3d9b9ffd97', 'na');
-
-const reqSec = 10;
-const reqMin = 500;
-
-//const timeout = 1000;
-
-LolApi.setRateLimit(reqSec, reqMin);
 
 function getSummonerID(s, callback){
     LolApi.Summoner.getByName(s, "na")
@@ -216,4 +215,12 @@ app.post('/requestNewAccount', function(req, res) {
     })
 });
 
-app.listen(3000);
+app.get('/',function(req, res){
+  res.sendfile(path.join(__dirname+'/views/index.html'));
+});
+ 
+
+app.set('port', process.env.PORT || 3000);
+var listener = app.listen(process.env.PORT, function () {
+  console.log('Your app is listening on port ' + listener.address().port);
+});
