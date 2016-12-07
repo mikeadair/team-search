@@ -97,6 +97,23 @@ function summonerInUse(summoner, callback){
   });
 }
 
+//Verifies Session
+function verifySession(userid, id, callback){
+  Session.find({'_id': id, 'userid': userid}, function(err, docs){
+    if(docs.length == 0){
+      callback({'error': 'Invalid session.'});
+    }else{
+      if((docs[0]['epoch'] + 27000000) > Date.now()){
+        Session.update({'_id': id}, {'epoch': Date.now()}, function(err, docs){});
+        callback(true);
+      }else{
+        Session.find({'_id': id}).remove().exec();
+        callback({'error': 'Session has timed-out.'});
+      }
+    }
+  })
+}
+
 function getSummonerID(s, callback){
     LolApi.Summoner.getByName(s, "na")
     .then(function (summoner) {
@@ -261,6 +278,7 @@ app.post('/login', function(req, res){
       if(bcrypt.compareSync(password, data['password'])){
         var session = new Session({'userid': data['_id'], 'epoch': Date.now()});
         acc.save();
+        return res.send({'sessionId': session['_id']})
       }else{
         return res.send({'error': 'Incorrect Password.'});
       }
