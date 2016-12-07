@@ -29,6 +29,21 @@ mongoose.connect('mongodb://'+mongo_user+':'+mongo_pass+'@ds159747.mlab.com:5974
 //Account Model
 var Account = mongoose.model('Account', {email: String, password: String, summoner: String, summonerId: Number, verified: Boolean, confirm: String});
 
+//Delete Non-Verified Accounts with similar email
+function delNonVerEmail(email, callback){
+  Account.find({'email': email, 'verified': false}).remove().exec();
+}
+
+//Delete Non-Verified Accounts with similar summoner
+function delNonVerSummoner(summoner, callback){
+  Account.find({'summoner': summoner, 'verified': false}).remove().exec();
+}
+
+//Delete Non-Verified Accounts with similar summonerId
+function delNonVerSummonerId(summonerId, callback){
+  Account.find({'summonerId': summonerId, 'verified': false}).remove().exec();
+}
+
 //Get Account by ID
 function getAccountById(id, callback){
   Account.find({'_id': id}, function(err, docs){
@@ -99,18 +114,6 @@ function teamVerification(sID, tID, callback){
     });
 }
 
-
-//doesnt work
-function getTopChamps(id, callback){
-    LolApi.ChampionMastery.getTopChampions(id, "3", "na", function(data){
-       callback(data);
-    });
-}
-
-
-//LolApi.getLeagueData(summonerId, callback);
-//function getLeagueData()...
-
 function accountVerify(id, token, callback){
     LolApi.Summoner.getMasteries(id, function(err, data){
       for(var i = 0;i < data[id]['pages'].length;i++){
@@ -143,9 +146,14 @@ app.post('/registerUser', function(req, res){
 
     //Make sure Account with ID exists
     getAccountById(id, function(data){
+      var email = data['email'];
+      var summoner = data['summoner'];
+      var summonerId = data['summonerId'];
+
       if(data['verified'] == true){
         return res.send({'error': 'Account already verified with User.'})
       }
+
       if(data['error']){
         return res.send(data);
       }else{
@@ -156,7 +164,14 @@ app.post('/registerUser', function(req, res){
             if(data['error']){
               return res.send(data);
             }else{
-              Account.update({_id: id}, {'verified': true}, function(err, docs){})
+              //Update Account
+              Account.update({_id: id}, {'verified': true}, function(err, docs){
+                //These must be in here so they fire off after the Update
+                //Delete Non-Verified Accounts with Duplicate Values
+                delNonVerEmail(email, function(data){})
+                delNonVerSummoner(summoner, function(data){})
+                delNonVerSummonerId(summonerId, function(data){})
+              })
               return res.send({'success': 'User successfully Registered.'});
             }
           })
@@ -218,9 +233,5 @@ app.post('/requestNewAccount', function(req, res) {
 app.get('/',function(req, res){
   res.sendfile(path.join(__dirname+'/views/index.html'));
 });
- 
 
-app.set('port', process.env.PORT || 3000);
-var listener = app.listen(process.env.PORT, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
-});
+app.listen(process.env.PORT || 3000);
