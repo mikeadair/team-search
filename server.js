@@ -29,6 +29,9 @@ mongoose.connect('mongodb://'+mongo_user+':'+mongo_pass+'@ds159747.mlab.com:5974
 //Account Model
 var Account = mongoose.model('Account', {email: String, password: String, summoner: String, summonerId: Number, verified: Boolean, confirm: String});
 
+//Session Model
+var Session = mongoose.model('Session', {userid: String, epoch: Number});
+
 //Delete Non-Verified Accounts with similar email
 function delNonVerEmail(email, callback){
   Account.find({'email': email, 'verified': false}).remove().exec();
@@ -49,6 +52,23 @@ function getAccountById(id, callback){
   Account.find({'_id': id}, function(err, docs){
     if(docs.length == 0){
       callback({'error': 'Account not found with ID.'});
+    }else{
+      callback(docs[0]);
+    }
+  });
+}
+
+//Find Account with Email/Summoner
+function getAccountByUser(user, callback){
+  Account.find({'summoner': summoner,'verified': true}, function(err, docs){
+    if(docs.length == 0){
+      Account.find({'email': email,'verified': true}, function(err, docs){
+        if(docs.length == 0){
+          callback({'error': 'Account not found with Summoner/Email.'});
+        }else{
+          callback(docs[0]);
+        }
+      });
     }else{
       callback(docs[0]);
     }
@@ -228,6 +248,24 @@ app.post('/requestNewAccount', function(req, res) {
         })
       }
     })
+});
+
+app.post('/login', function(req, res){
+  //Can be Email or Summoner
+  var user = req.body.user;
+  var password = req.body.password;
+  getAccountByUser(user, function(data){
+    if(data['error']){
+      return res.send(data);
+    }else{
+      if(bcrypt.compareSync(password, data['password'])){
+        var session = new Session({'userid': data['_id'], 'epoch': Date.now()});
+        acc.save();
+      }else{
+        return res.send({'error': 'Incorrect Password.'});
+      }
+    }
+  })
 });
 
 app.get('/',function(req, res){
