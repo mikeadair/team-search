@@ -58,17 +58,11 @@ function getAccountById(id, callback){
   });
 }
 
-//Find Account with Email/Summoner
-function getAccountByUser(user, callback){
-  Account.find({'summoner': user,'verified': true}, function(err, docs){
+//Find Account with Email
+function getAccountByEmail(email, callback){
+  Account.find({'email': email}, function(err, docs){
     if(docs.length == 0){
-      Account.find({'email': user,'verified': true}, function(err, docs){
-        if(docs.length == 0){
-          callback({'error': 'Account not found with Summoner/Email.'});
-        }else{
-          callback(docs[0]);
-        }
-      });
+      callback({'error': 'Account not found with Email.'});
     }else{
       callback(docs[0]);
     }
@@ -77,11 +71,11 @@ function getAccountByUser(user, callback){
 
 //Checks if email is already being used
 function emailInUse(email, callback){
-  Account.find({'email': email, 'verified': true}, function(err, docs){
+  Account.find({'email': email}, function(err, docs){
     if(docs.length == 0){
       callback(false);
     }else{
-      callback({'error': "Email is already verified for another account."});
+      callback({'error': "Email is already in use."});
     }
   });
 }
@@ -175,9 +169,9 @@ function validateEmail(email) {
 app.post('/registerUser', function(req, res){
     var confirm = req.body.confirm;
     var id = req.body.id;
-
+    
     //Make sure queries are sent
-    if(!id || !confirm){
+    if(!confirm || !id){
         return res.send({"error": "Missing 'confirm' or 'id'."});
     }
 
@@ -268,13 +262,19 @@ app.post('/requestNewAccount', function(req, res) {
 });
 
 app.post('/login', function(req, res){
-  //Can be Email or Summoner
-  var user = req.body.user;
+  var email = req.body.email;
   var password = req.body.password;
-  getAccountByUser(user, function(data){
+  
+  if(!email || !password){
+      return res.send({'error': "Missing 'email' or 'password'."});
+  }
+  getAccountByEmail(email, function(data){
     if(data['error']){
       return res.send(data);
     }else{
+      if(data['verified'] == false){
+          return res.send({'error': "User needs verification before login.", 'confirm': data['confirm'], 'id': data['_id']});
+      }
       if(bcrypt.compareSync(password, data['password'])){
         var session = new Session({'userid': data['_id'], 'epoch': Date.now()});
         session.save();
