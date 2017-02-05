@@ -6,6 +6,25 @@ var bcrypt = require('bcrypt-nodejs');
 
 //Release public folder to the world
 app.use(express.static('public'));
+
+app.use(function (req, res, next) {
+
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    // Pass to next layer of middleware
+    next();
+});
 var path = require('path');
 
 //Developer Key - North America
@@ -152,7 +171,7 @@ function accountVerify(id, token, callback){
           return callback(true);
         }
       }
-    return callback({'error': 'Mastery with confirm token not found.'});
+    return callback({'error': 'Mastery with confirm token not found. Please verify you changed your mastery page to '+token});
     });
 }
 
@@ -214,6 +233,7 @@ app.post('/registerUser', function(req, res){
 });
 
 app.post('/requestNewAccount', function(req, res) {
+    console.log(req.body.email);
     var email = req.body.email;
     var summoner = req.body.summoner;
     var password = bcrypt.hashSync(req.body.password);
@@ -273,7 +293,7 @@ app.post('/login', function(req, res){
       return res.send(data);
     }else{
       if(data['verified'] == false){
-          return res.send({'error': "User needs verification before login.", 'confirm': data['confirm'], 'id': data['_id']});
+          return res.send({'verified': "false", 'confirm': data['confirm'], 'id': data['_id']});
       }
       if(bcrypt.compareSync(password, data['password'])){
         var session = new Session({'userid': data['_id'], 'epoch': Date.now()});
@@ -287,7 +307,7 @@ app.post('/login', function(req, res){
 });
 
 app.get('/',function(req, res){
-  res.sendfile(path.join(__dirname+'/views/index.html'));
+  res.sendFile(path.join(__dirname+'/views/index.html'));
 });
 
 app.listen(process.env.PORT || 3000);
